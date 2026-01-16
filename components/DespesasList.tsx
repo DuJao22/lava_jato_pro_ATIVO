@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, X, Receipt, MessageSquare, DollarSign } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Search, Edit2, Trash2, X, Receipt, MessageSquare, DollarSign, Calendar, ArrowRight } from 'lucide-react';
 import { Despesa } from '../types';
 
 interface DespesasListProps {
@@ -11,11 +11,26 @@ interface DespesasListProps {
 export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Form states
   const [valor, setValor] = useState('');
   const [observacao, setObservacao] = useState('');
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
+
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      const itemDate = new Date(item.data.split('T')[0]);
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+      
+      if (start && end) return itemDate >= start && itemDate <= end;
+      if (start) return itemDate >= start;
+      if (end) return itemDate <= end;
+      return true;
+    }).sort((a,b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+  }, [items, startDate, endDate]);
 
   const resetForm = () => {
     setValor('');
@@ -67,20 +82,49 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div>
           <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Gestão de Saídas</h2>
-          <p className="text-white/60 text-sm">Mantenha seus custos sob controle rigoroso.</p>
+          <p className="text-white/60 text-sm">Controle rigoroso de custos operacionais.</p>
         </div>
-        <button
-          onClick={() => { resetForm(); setIsModalOpen(true); }}
-          className="w-full md:w-auto flex items-center justify-center gap-3 bg-red-600 text-white px-8 py-3.5 rounded-2xl font-black uppercase italic tracking-widest hover:bg-red-700 shadow-xl shadow-red-600/30 transition-all active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          Registrar Gasto
-        </button>
+        
+        <div className="flex flex-col md:flex-row items-center gap-3">
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20">
+            <div className="flex items-center gap-2 px-3 text-white">
+              <Calendar size={14} className="text-red-500" />
+              <input 
+                type="date" 
+                className="bg-transparent border-none p-0 focus:ring-0 text-[10px] font-black uppercase text-white"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <ArrowRight size={14} className="text-white/20" />
+            <div className="flex items-center gap-2 px-3 text-white">
+              <input 
+                type="date" 
+                className="bg-transparent border-none p-0 focus:ring-0 text-[10px] font-black uppercase text-white"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+              {(startDate || endDate) && (
+                <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-red-400 hover:text-red-200">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+            className="w-full md:w-auto flex items-center justify-center gap-3 bg-red-600 text-white px-8 py-3.5 rounded-2xl font-black uppercase italic tracking-widest hover:bg-red-700 shadow-xl shadow-red-600/30 transition-all active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+            Registrar Gasto
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.sort((a,b) => new Date(b.data).getTime() - new Date(a.data).getTime()).map(item => (
-          <div key={item.id} className="glass p-8 rounded-[2rem] border-white/30 shadow-2xl group hover:shadow-red-600/10 transition-all">
+        {filteredItems.map(item => (
+          <div key={item.id} className="glass p-8 rounded-[2rem] border-white/30 shadow-2xl group hover:shadow-red-600/10 transition-all animate-in fade-in zoom-in-95">
             <div className="flex justify-between items-start mb-6">
               <div className="p-4 bg-red-600 rounded-2xl text-white shadow-lg shadow-red-500/30">
                 <Receipt className="w-6 h-6" />
@@ -96,7 +140,7 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
             </div>
             
             <div className="mb-6">
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mb-1">Valor da Saída</p>
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mb-1">Valor</p>
               <p className="text-3xl font-black text-slate-900 tracking-tighter">R$ {item.valor.toFixed(2)}</p>
             </div>
 
@@ -106,28 +150,26 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Observação</p>
                   <p className="text-xs font-semibold text-slate-700 leading-relaxed italic">
-                    {item.observacao || "Nenhuma observação informada."}
+                    {item.observacao || "Gasto operacional."}
                   </p>
                 </div>
               </div>
-              <div className="flex justify-between items-end">
-                <div>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Lançado em</p>
-                   <p className="text-xs font-black text-slate-600">{new Date(item.data).toLocaleDateString('pt-BR')}</p>
-                </div>
+              <div>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Data</p>
+                 <p className="text-xs font-black text-slate-600">{new Date(item.data).toLocaleDateString('pt-BR')}</p>
               </div>
             </div>
           </div>
         ))}
-        {items.length === 0 && (
+        {filteredItems.length === 0 && (
           <div className="col-span-full py-20 text-center glass border-dashed rounded-[3rem] border-white/50">
             <Receipt size={64} className="mx-auto text-white/20 mb-4" />
-            <p className="text-white/40 font-black italic uppercase tracking-tighter text-xl">Nenhuma despesa registrada</p>
+            <p className="text-white/40 font-black italic uppercase tracking-tighter text-xl">Nada para exibir</p>
+            <p className="text-white/20 text-xs font-bold uppercase tracking-widest">Ajuste os filtros de data</p>
           </div>
         )}
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4">
           <div className="glass w-full max-w-md rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden border-white/50 animate-in zoom-in-95 duration-300">
@@ -141,7 +183,7 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
             </div>
             <div className="p-8 space-y-6">
               <div>
-                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Valor Total (R$)</label>
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Valor (R$)</label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                     <DollarSign size={18} />
@@ -158,17 +200,17 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Detalhamento / Observação</label>
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Observação</label>
                 <textarea
-                  className="w-full px-4 py-4 border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none font-medium text-sm transition-all min-h-[120px]"
-                  placeholder="Descreva aqui do que se trata este custo..."
+                  className="w-full px-4 py-4 border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none font-medium text-sm min-h-[120px]"
+                  placeholder="Detalhamento do custo..."
                   value={observacao}
                   onChange={e => setObservacao(e.target.value)}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Data da Operação</label>
+                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Data</label>
                 <input
                   type="date"
                   className="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none font-bold"
