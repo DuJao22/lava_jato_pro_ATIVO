@@ -1,45 +1,65 @@
 
-import { Faturamento, Despesa, CarSize, PaymentMethod } from '../types';
+import { createClient } from '@supabase/supabase-js';
+import { Faturamento, Despesa } from '../types';
 
-const FATURAMENTO_KEY = 'lavajato_faturamento_v2';
-const DESPESAS_KEY = 'lavajato_despesas_v2';
+// Credenciais (Devem ser configuradas no painel da Vercel/Supabase)
+const SUPABASE_URL = (window as any).process?.env?.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = (window as any).process?.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-const MOCK_FATURAMENTO: Faturamento[] = [
-  { 
-    id: '1', 
-    tipoLavagem: 'Lavagem Completa', 
-    porte: CarSize.MEDIUM, 
-    valor: 70, 
-    pagamento: PaymentMethod.PIX, 
-    data: new Date().toISOString() 
-  },
-  { 
-    id: '2', 
-    tipoLavagem: 'Ducha Rápida', 
-    porte: CarSize.SMALL, 
-    valor: 35, 
-    pagamento: PaymentMethod.DINHEIRO, 
-    data: new Date().toISOString() 
-  },
-];
+const isCloudEnabled = SUPABASE_URL && SUPABASE_ANON_KEY;
+const supabase = isCloudEnabled ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-const MOCK_DESPESAS: Despesa[] = [
-  { id: '1', valor: 50.00, observacao: 'Compra de produtos (shampoo e cera)', data: new Date().toISOString() },
-];
+const FATURAMENTO_KEY = 'lavajato_faturamento_v3';
+const DESPESAS_KEY = 'lavajato_despesas_v3';
 
 export const storage = {
-  getFaturamento: (): Faturamento[] => {
-    const data = localStorage.getItem(FATURAMENTO_KEY);
-    return data ? JSON.parse(data) : MOCK_FATURAMENTO;
+  isCloud: () => !!isCloudEnabled,
+
+  getFaturamento: async (): Promise<Faturamento[]> => {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('faturamento')
+        .select('*')
+        .order('data', { ascending: false });
+      if (!error) return data || [];
+      console.error('Erro Supabase:', error);
+    }
+    const local = localStorage.getItem(FATURAMENTO_KEY);
+    return local ? JSON.parse(local) : [];
   },
-  saveFaturamento: (items: Faturamento[]) => {
+
+  saveFaturamento: async (items: Faturamento[], lastItem?: Faturamento, isDelete?: boolean): Promise<void> => {
     localStorage.setItem(FATURAMENTO_KEY, JSON.stringify(items));
+    if (supabase && lastItem) {
+      if (isDelete) {
+        await supabase.from('faturamento').delete().eq('id', lastItem.id);
+      } else {
+        await supabase.from('faturamento').upsert(lastItem);
+      }
+    }
   },
-  getDespesas: (): Despesa[] => {
-    const data = localStorage.getItem(DESPESAS_KEY);
-    return data ? JSON.parse(data) : MOCK_DESPESAS;
+
+  getDespesas: async (): Promise<Despesa[]> => {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('despesas')
+        .select('*')
+        .order('data', { ascending: false });
+      if (!error) return data || [];
+      console.error('Erro Supabase:', error);
+    }
+    const local = localStorage.getItem(DESPESAS_KEY);
+    return local ? JSON.parse(local) : [];
   },
-  saveDespesas: (items: Despesa[]) => {
+
+  saveDespesas: async (items: Despesa[], lastItem?: Despesa, isDelete?: boolean): Promise<void> => {
     localStorage.setItem(DESPESAS_KEY, JSON.stringify(items));
+    if (supabase && lastItem) {
+      if (isDelete) {
+        await supabase.from('despesas').delete().eq('id', lastItem.id);
+      } else {
+        await supabase.from('despesas').upsert(lastItem);
+      }
+    }
   }
 };
