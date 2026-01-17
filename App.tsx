@@ -7,7 +7,7 @@ import { DespesasList } from './components/DespesasList';
 import { Relatorios } from './components/Relatorios';
 import { Faturamento, Despesa } from './types';
 import { storage } from './services/storage';
-import { Loader2, CloudOff, Cloud, RefreshCw } from 'lucide-react';
+import { Loader2, CloudOff, Cloud, RefreshCw, HeartPulse } from 'lucide-react';
 
 type View = 'dashboard' | 'faturamento' | 'despesas' | 'relatorios';
 
@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastHeartbeat, setLastHeartbeat] = useState<number>(Date.now());
 
   // Função centralizada para carregar dados
   const loadData = useCallback(async (showMainLoader = false) => {
@@ -29,7 +30,6 @@ const App: React.FC = () => {
         storage.getDespesas()
       ]);
       
-      // Atualiza o estado apenas se houver mudança para evitar re-renders desnecessários
       setFaturamentos(fat);
       setDespesas(desp);
     } catch (err) {
@@ -40,20 +40,35 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Efeito inicial e Polling (Auto-atualização a cada 30 segundos)
+  // Efeito para o PING de 5 minutos (Keep-Alive)
+  useEffect(() => {
+    const keepAlive = async () => {
+      const success = await storage.ping();
+      if (success) setLastHeartbeat(Date.now());
+    };
+
+    // Executa uma vez no início
+    keepAlive();
+
+    // Intervalo de 5 minutos (300.000 ms)
+    const heartbeatInterval = setInterval(keepAlive, 300000);
+
+    return () => clearInterval(heartbeatInterval);
+  }, []);
+
+  // Efeito de Polling para dados (30 segundos)
   useEffect(() => {
     loadData(true);
 
     const interval = setInterval(() => {
       loadData(false);
-    }, 30000); // 30 segundos
+    }, 30000); 
 
     return () => clearInterval(interval);
   }, [loadData]);
 
   const handleUpdateFaturamento = async (items: Faturamento[]) => {
     const oldItems = faturamentos;
-    // Atualização otimista (mostra na hora)
     setFaturamentos(items);
     
     const isDelete = items.length < oldItems.length;
@@ -63,11 +78,9 @@ const App: React.FC = () => {
 
     try {
       await storage.saveFaturamento(items, affectedItem, isDelete);
-      // Força sincronização após salvar para garantir integridade
       await loadData(false);
     } catch (e) {
       console.error("Erro ao salvar faturamento:", e);
-      // Reverte em caso de erro crítico (opcional)
       await loadData(false);
     }
   };
@@ -95,7 +108,7 @@ const App: React.FC = () => {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-white">
           <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
-          <p className="font-black italic uppercase tracking-widest text-sm animate-pulse">Estabelecendo Conexão...</p>
+          <p className="font-black italic uppercase tracking-widest text-sm animate-pulse">Iniciando Motores...</p>
         </div>
       );
     }
@@ -117,21 +130,32 @@ const App: React.FC = () => {
   return (
     <Layout currentView={currentView} setView={setCurrentView}>
       <div className="relative">
-        {/* Status de Sincronização Dinâmico */}
+        {/* Status de Sincronização e Heartbeat */}
         <div className="fixed bottom-6 right-6 z-50 pointer-events-none transition-all duration-500">
           <div className={`glass px-4 py-2 rounded-full flex items-center gap-3 border-white/20 shadow-2xl ${storage.isCloud() ? 'text-emerald-600' : 'text-amber-600'}`}>
-            <div className="relative">
+            <div className="relative flex items-center justify-center">
               {isSyncing ? (
                 <RefreshCw size={14} className="animate-spin text-blue-500" />
               ) : storage.isCloud() ? (
-                <Cloud size={14} />
+                <div className="relative">
+                   <Cloud size={14} />
+                   {/* Ponto pulsante que indica o último ping bem sucedido */}
+                   <div key={lastHeartbeat} className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-ping opacity-75" />
+                </div>
               ) : (
                 <CloudOff size={14} />
               )}
             </div>
-            <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-              {isSyncing ? 'Sincronizando...' : storage.isCloud() ? 'Nuvem Conectada' : 'Offline (Local)'}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] leading-tight">
+                {isSyncing ? 'Sincronizando...' : storage.isCloud() ? 'Nuvem Conectada' : 'Offline (Local)'}
+              </span>
+              {storage.isCloud() && (
+                <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">
+                  Ping Ativo (5min)
+                </span>
+              )}
+            </div>
           </div>
         </div>
         

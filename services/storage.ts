@@ -1,3 +1,4 @@
+
 import { Database } from '@sqlitecloud/drivers';
 import { Faturamento, Despesa } from '../types';
 
@@ -24,11 +25,28 @@ if (CONNECTION_STRING) {
 export const storage = {
   isCloud: () => !!CONNECTION_STRING && !!db,
 
+  /**
+   * Executa um comando ultra-leve para manter a conexão ativa
+   * Evita que a instância do banco de dados entre em sleep mode.
+   */
+  ping: async (): Promise<boolean> => {
+    if (db) {
+      try {
+        await db.sql`SELECT 1`;
+        console.debug("Heartbeat: Conexão com SQLite Cloud ativa.");
+        return true;
+      } catch (e) {
+        console.error("Heartbeat falhou:", e);
+        return false;
+      }
+    }
+    return false;
+  },
+
   getFaturamento: async (): Promise<Faturamento[]> => {
     if (db) {
       try {
         const results = await db.sql`SELECT * FROM faturamento ORDER BY data DESC`;
-        // SQLite Cloud retorna um array de objetos
         return results || [];
       } catch (e) {
         console.error("Erro ao buscar faturamento no Cloud:", e);
@@ -39,7 +57,6 @@ export const storage = {
   },
 
   saveFaturamento: async (items: Faturamento[], lastItem?: Faturamento, isDelete?: boolean): Promise<void> => {
-    // Sempre salva no local como backup/cache
     localStorage.setItem(FATURAMENTO_KEY, JSON.stringify(items));
     
     if (db && lastItem) {

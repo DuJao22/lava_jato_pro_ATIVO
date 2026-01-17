@@ -7,7 +7,8 @@ import {
   RefreshCcw,
   Calendar,
   ArrowRight,
-  Filter
+  Filter,
+  BarChart3
 } from 'lucide-react';
 import { 
   XAxis, 
@@ -85,12 +86,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
   }, [filteredData]);
 
   const chartData = useMemo(() => {
-    // Para simplificar, mostramos os últimos 7 dias de movimentação no gráfico idependente do filtro,
-    // ou adaptamos para o range customizado se for curto.
     const dailyMap: Record<string, { date: string; faturamento: number; despesas: number; rawDate: string }> = {};
     const today = new Date();
     
-    for (let i = 7; i >= 0; i--) {
+    // Define os últimos 7 dias fixos para o gráfico de tendência
+    for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(today.getDate() - i);
       const dStr = d.toISOString().split('T')[0];
@@ -112,7 +112,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
       if (dailyMap[dStr]) dailyMap[dStr].despesas += (Number(d.valor) || 0);
     });
 
-    return Object.values(dailyMap).sort((a,b) => a.rawDate.localeCompare(b.rawDate));
+    return Object.values(dailyMap)
+      .map(item => ({
+        ...item,
+        lucro: item.faturamento - item.despesas
+      }))
+      .sort((a,b) => a.rawDate.localeCompare(b.rawDate));
   }, [faturamentos, despesas]);
 
   return (
@@ -222,41 +227,108 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
         </div>
       </div>
 
-      {/* Gráfico de Evolução 7D */}
+      {/* Gráfico de Evolução com 3 Marcações */}
       <div className="glass p-6 rounded-[2.5rem] border-white/10 shadow-xl overflow-hidden">
         <div className="flex items-center justify-between mb-6">
            <h3 className="text-[11px] font-black text-slate-900 uppercase italic tracking-widest flex items-center gap-2">
-             <div className="w-1.5 h-5 bg-blue-600 rounded-full" /> Tendência de Caixa
+             <BarChart3 size={14} className="text-blue-600" /> Tendência de Caixa (7D)
            </h3>
            <div className="bg-slate-100 p-2 rounded-xl">
              <RefreshCcw size={12} className={`text-slate-400 ${isAnimating ? 'animate-spin' : ''}`} />
            </div>
         </div>
         
-        <div className="h-[200px] w-full">
+        <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorFat" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.4}/>
+                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
                   <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="colorDesp" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#dc2626" stopOpacity={0.2}/>
                   <stop offset="95%" stopColor="#dc2626" stopOpacity={0}/>
                 </linearGradient>
+                <linearGradient id="colorLucro" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} dy={10} />
+              <XAxis 
+                dataKey="date" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} 
+                dy={10} 
+              />
               <YAxis axisLine={false} tickLine={false} hide />
               <Tooltip 
-                contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', padding: '15px' }}
-                labelStyle={{ fontSize: '11px', fontWeight: '900', color: '#1e293b', marginBottom: '5px' }}
+                contentStyle={{ 
+                  borderRadius: '24px', 
+                  border: 'none', 
+                  boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', 
+                  padding: '16px',
+                  background: 'rgba(255,255,255,0.95)',
+                  backdropFilter: 'blur(10px)'
+                }}
+                labelStyle={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', marginBottom: '8px', textTransform: 'uppercase' }}
+                itemStyle={{ fontSize: '11px', fontWeight: 'bold', padding: '2px 0' }}
+                formatter={(value: number) => [`R$ ${value.toFixed(2)}`, '']}
               />
-              <Area type="monotone" dataKey="faturamento" name="Entradas" stroke="#2563eb" strokeWidth={4} fill="url(#colorFat)" />
-              <Area type="monotone" dataKey="despesas" name="Saídas" stroke="#dc2626" strokeWidth={2} strokeDasharray="5 5" fill="url(#colorDesp)" />
+              
+              {/* Saídas (Vermelho - Tracejado) */}
+              <Area 
+                type="monotone" 
+                dataKey="despesas" 
+                name="Saídas" 
+                stroke="#dc2626" 
+                strokeWidth={2} 
+                strokeDasharray="4 4" 
+                fill="url(#colorDesp)" 
+                animationDuration={1500}
+              />
+              
+              {/* Entradas (Azul - Sólido) */}
+              <Area 
+                type="monotone" 
+                dataKey="faturamento" 
+                name="Entradas" 
+                stroke="#2563eb" 
+                strokeWidth={3} 
+                fill="url(#colorFat)" 
+                animationDuration={1500}
+              />
+
+              {/* Lucro Líquido (Verde - Destaque) */}
+              <Area 
+                type="monotone" 
+                dataKey="lucro" 
+                name="Lucro Real" 
+                stroke="#059669" 
+                strokeWidth={4} 
+                fill="url(#colorLucro)" 
+                animationDuration={1500}
+              />
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+        
+        {/* Legenda Customizada */}
+        <div className="flex items-center justify-center gap-6 mt-4">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-1 bg-blue-600 rounded-full" />
+            <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Entradas</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-1 bg-red-600 rounded-full border-t border-dashed" />
+            <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Saídas</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-1.5 bg-emerald-500 rounded-full" />
+            <span className="text-[8px] font-black uppercase text-emerald-600 tracking-widest">Lucro Real</span>
+          </div>
         </div>
       </div>
     </div>
