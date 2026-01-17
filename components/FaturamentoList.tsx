@@ -15,7 +15,6 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Form states
   const [tipoLavagem, setTipoLavagem] = useState('');
   const [porte, setPorte] = useState<CarSize>(CarSize.MEDIUM);
   const [valor, setValor] = useState('');
@@ -26,21 +25,19 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
     return items.filter(item => {
       const matchSearch = item.tipoLavagem.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const itemDate = new Date(item.data.split('T')[0]);
-      const start = startDate ? new Date(startDate) : null;
-      const end = endDate ? new Date(endDate) : null;
+      const itemDateOnly = item.data.substring(0, 10);
       
       let matchDate = true;
-      if (start && end) {
-        matchDate = itemDate >= start && itemDate <= end;
-      } else if (start) {
-        matchDate = itemDate >= start;
-      } else if (end) {
-        matchDate = itemDate <= end;
+      if (startDate && endDate) {
+        matchDate = itemDateOnly >= startDate && itemDateOnly <= endDate;
+      } else if (startDate) {
+        matchDate = itemDateOnly >= startDate;
+      } else if (endDate) {
+        matchDate = itemDateOnly <= endDate;
       }
 
       return matchSearch && matchDate;
-    }).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+    }).sort((a, b) => b.data.localeCompare(a.data));
   }, [items, searchTerm, startDate, endDate]);
 
   const resetForm = () => {
@@ -48,13 +45,14 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
     setPorte(CarSize.MEDIUM);
     setValor('');
     setPagamento(PaymentMethod.PIX);
-    setData(new Date().toISOString().substring(0, 16));
+    setData(new Date().toLocaleString('sv-SE').replace(' ', 'T').substring(0, 16));
     setEditingId(null);
   };
 
   const handleSave = () => {
     if (!tipoLavagem || !valor) return;
-    const entryData = new Date(data).toISOString();
+    // Salva exatamente o que está no input ou converte mantendo a data local
+    const entryData = data.includes('T') ? data : new Date(data).toISOString();
 
     if (editingId) {
       const updated = items.map(item => 
@@ -84,7 +82,7 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
     setPorte(item.porte);
     setValor(item.valor.toString());
     setPagamento(item.pagamento);
-    setData(new Date(item.data).toISOString().substring(0, 16));
+    setData(item.data.substring(0, 16));
     setIsModalOpen(true);
   };
 
@@ -183,13 +181,13 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
                       {item.pagamento}
                     </div>
                   </td>
-                  <td className="px-8 py-5 font-black text-slate-900 text-lg tracking-tighter">R$ {item.valor.toFixed(2)}</td>
+                  <td className="px-8 py-5 font-black text-slate-900 text-lg tracking-tighter">R$ {Number(item.valor).toFixed(2)}</td>
                   <td className="px-8 py-5">
                     <div className="flex flex-col">
-                      <span className="text-xs font-black text-slate-700">{new Date(item.data).toLocaleDateString('pt-BR')}</span>
+                      <span className="text-xs font-black text-slate-700">{new Date(item.data.replace(' ', 'T')).toLocaleDateString('pt-BR')}</span>
                       <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
                         <Clock className="w-3 h-3 text-blue-500" />
-                        {new Date(item.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(item.data.replace(' ', 'T')).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </td>
@@ -211,7 +209,7 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
                     <div className="max-w-xs mx-auto text-slate-300">
                        <Search size={48} className="mx-auto mb-4 opacity-20" />
                        <p className="font-black italic uppercase tracking-tighter text-xl">Nenhum registro</p>
-                       <p className="text-xs font-medium">Não há lavagens no intervalo selecionado.</p>
+                       <p className="text-xs font-medium">Não há lavagens para este filtro.</p>
                     </div>
                   </td>
                 </tr>
@@ -238,7 +236,7 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
                 <input
                   type="text"
                   className="w-full px-5 py-4 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none font-bold text-slate-700 italic placeholder:font-normal"
-                  placeholder="Ex: Lavagem Geral, Cera Cristalizada..."
+                  placeholder="Ex: Lavagem Geral, Cera..."
                   value={tipoLavagem}
                   onChange={e => setTipoLavagem(e.target.value)}
                 />
@@ -270,7 +268,7 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Método de Pagamento</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Pagamento</label>
                 <div className="grid grid-cols-3 gap-3">
                   {Object.values(PaymentMethod).map((method) => (
                     <button
@@ -291,7 +289,7 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Cronograma</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Horário</label>
                 <input
                   type="datetime-local"
                   className="w-full px-5 py-4 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none font-black text-xs uppercase"
@@ -311,7 +309,7 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
                 onClick={handleSave}
                 className="flex-1 px-4 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] shadow-xl shadow-blue-600/30 hover:bg-blue-700 transition-all active:scale-95"
               >
-                Salvar Lavagem
+                Salvar
               </button>
             </div>
           </div>
