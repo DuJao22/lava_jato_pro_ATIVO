@@ -1,6 +1,20 @@
 
 import React, { useMemo, useState } from 'react';
-import { Download, FileText, Printer, Clock, Gauge, Calendar, ArrowRight, X, FileSpreadsheet } from 'lucide-react';
+import { 
+  Download, 
+  Printer, 
+  Calendar, 
+  ArrowRight, 
+  X, 
+  FileSpreadsheet, 
+  Gauge, 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  Activity,
+  ChevronRight,
+  ClipboardList
+} from 'lucide-react';
 import { Faturamento, Despesa } from '../types';
 import * as XLSX from 'xlsx';
 
@@ -43,220 +57,209 @@ export const Relatorios: React.FC<RelatoriosProps> = ({ faturamentos, despesas }
     };
   }, [filteredData]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new();
-
-    // Aba 1: Resumo Geral
     const resumoData = [
-      ["RELATÓRIO DE DESEMPENHO - LAVA-JATO PRO"],
+      ["EXTRATO DE PERFORMANCE - LAVA-JATO PRO"],
+      ["Período:", `${new Date(filteredData.start).toLocaleDateString()} a ${new Date(filteredData.end).toLocaleDateString()}`],
       [""],
-      ["Período:", `${new Date(filteredData.start).toLocaleDateString()} até ${new Date(filteredData.end).toLocaleDateString()}`],
-      ["Exportado em:", new Date().toLocaleString()],
-      [""],
-      ["Indicadores", "Valor"],
-      ["Total de Atendimentos", summary.countFat],
-      ["Ticket Médio", `R$ ${summary.avgTicket.toFixed(2)}`],
-      ["Faturamento Bruto", `R$ ${summary.totalFat.toFixed(2)}`],
-      ["Total de Despesas", `R$ ${summary.totalDesp.toFixed(2)}`],
-      ["Lucro Líquido", `R$ ${summary.lucro.toFixed(2)}`],
+      ["Métrica", "Valor"],
+      ["Total Lavagens", summary.countFat],
+      ["Ticket Médio", summary.avgTicket.toFixed(2)],
+      ["Entradas (R$)", summary.totalFat.toFixed(2)],
+      ["Saídas (R$)", summary.totalDesp.toFixed(2)],
+      ["LUCRO LÍQUIDO", summary.lucro.toFixed(2)],
     ];
-    const wsResumo = XLSX.utils.aoa_to_sheet(resumoData);
-    XLSX.utils.book_append_sheet(wb, wsResumo, "Resumo");
-
-    // Aba 2: Detalhamento de Entradas (Faturamentos)
-    const fatExcel = filteredData.fat.map(f => ({
-      "Data": new Date(f.data).toLocaleDateString('pt-BR'),
-      "Hora": new Date(f.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      "Serviço": f.tipoLavagem,
-      "Porte": f.porte,
-      "Pagamento": f.pagamento,
-      "Valor (R$)": f.valor
-    }));
-    const wsFat = XLSX.utils.json_to_sheet(fatExcel);
-    XLSX.utils.book_append_sheet(wb, wsFat, "Entradas");
-
-    // Aba 3: Detalhamento de Saídas (Despesas)
-    const despExcel = filteredData.desp.map(d => ({
-      "Data": new Date(d.data).toLocaleDateString('pt-BR'),
-      "Descrição": d.observacao || "Gasto operacional",
-      "Valor (R$)": d.valor
-    }));
-    const wsDesp = XLSX.utils.json_to_sheet(despExcel);
-    XLSX.utils.book_append_sheet(wb, wsDesp, "Saídas");
-
-    // Gerar Download
-    const fileName = `Relatorio_LavaJato_${startDate}_a_${endDate}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumoData), "Resumo");
+    XLSX.writeFile(wb, `Relatorio_${startDate}_${endDate}.xlsx`);
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-6 print:hidden">
-        <div>
-          <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Relatórios</h2>
-          <p className="text-white/60 text-sm">Extrato consolidado por período.</p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          <div className="glass p-2 rounded-2xl flex items-center gap-3 pr-4 shadow-xl">
-             <div className="bg-blue-600 p-2 rounded-xl text-white">
-                <Calendar size={18} />
-             </div>
-             <div className="flex items-center gap-2">
-                <input 
-                  type="date" 
-                  className="bg-transparent border-none focus:ring-0 font-black uppercase text-[10px] tracking-widest text-slate-800"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-                <ArrowRight size={14} className="text-slate-300" />
-                <input 
-                  type="date" 
-                  className="bg-transparent border-none focus:ring-0 font-black uppercase text-[10px] tracking-widest text-slate-800"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-             </div>
+    <div className="space-y-6 pb-10">
+      {/* Barra de Filtros Executiva */}
+      <div className="flex flex-col gap-4 no-print">
+        <div className="glass p-5 rounded-[2rem] border-white/20 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="bg-blue-600 p-3 rounded-2xl text-white shadow-lg shadow-blue-500/30">
+              <Calendar size={20} />
+            </div>
+            <div className="flex flex-1 items-center gap-2 bg-slate-100/50 p-2 rounded-xl border border-slate-200">
+              <input 
+                type="date" 
+                className="bg-transparent border-none p-1 text-[11px] font-black uppercase text-slate-700 focus:ring-0 w-full"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <ArrowRight size={12} className="text-slate-400" />
+              <input 
+                type="date" 
+                className="bg-transparent border-none p-1 text-[11px] font-black uppercase text-slate-700 focus:ring-0 w-full"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full md:w-auto">
             <button 
               onClick={handleExportExcel}
-              className="flex items-center gap-3 bg-emerald-600 px-6 py-3.5 rounded-2xl text-white font-black uppercase text-[10px] tracking-[0.2em] hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 active:scale-95"
-              title="Baixar Planilha Excel"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-600 text-white px-5 py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"
             >
-              <FileSpreadsheet className="w-5 h-5" />
-              Excel
+              <FileSpreadsheet size={16} /> Excel
             </button>
-            
             <button 
               onClick={handlePrint}
-              className="flex items-center gap-3 bg-white px-6 py-3.5 rounded-2xl text-slate-800 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-blue-50 transition-all shadow-xl shadow-black/20 active:scale-95"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-5 py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all"
             >
-              <Printer className="w-5 h-5 text-blue-600" />
-              Imprimir
+              <Printer size={16} /> Imprimir
             </button>
           </div>
         </div>
       </div>
 
-      <div className="bg-white p-12 rounded-[3.5rem] border shadow-2xl print:shadow-none print:border-none print:p-0 overflow-hidden">
-        <div className="flex items-center justify-between mb-12 pb-12 border-b-2 border-slate-100">
+      {/* Documento do Relatório */}
+      <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 print:shadow-none print:border-none">
+        
+        {/* Header Profissional */}
+        <div className="p-8 md:p-12 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-4">
-            <div className="bg-slate-900 p-4 rounded-2xl text-white shadow-xl">
-              <Gauge className="w-10 h-10" />
+            <div className="w-16 h-16 bg-slate-900 rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl">
+              <Gauge size={32} />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">Lava-jato Pro</h1>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-1">Gestão de Alta Performance</p>
+              <h1 className="text-2xl font-black text-slate-900 italic uppercase tracking-tighter leading-tight">Lava-jato Pro</h1>
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Gestão de Alta Performance</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="font-black text-slate-900 tracking-tighter text-xl italic uppercase">Relatório de Período</p>
-            <p className="text-[10px] text-blue-600 font-black uppercase tracking-[0.2em] mt-1">
+          <div className="text-left md:text-right border-l-4 md:border-l-0 md:border-r-4 border-blue-600 pl-4 md:pl-0 md:pr-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Período Selecionado</span>
+            <div className="text-sm font-black text-slate-900 uppercase">
               {new Date(filteredData.start).toLocaleDateString()} — {new Date(filteredData.end).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
-          <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 text-center">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Atendimentos</p>
-            <p className="text-4xl font-black text-slate-900 tracking-tighter leading-none">{summary.countFat}</p>
-          </div>
-          <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 text-center">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Ticket Médio</p>
-            <p className="text-2xl font-black text-slate-900 tracking-tighter">R$ {summary.avgTicket.toFixed(0)}</p>
-          </div>
-          <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 text-center">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Faturado</p>
-            <p className="text-2xl font-black text-blue-600 tracking-tighter">R$ {summary.totalFat.toFixed(2)}</p>
-          </div>
-          <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 text-center">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Gastos</p>
-            <p className="text-2xl font-black text-red-600 tracking-tighter">R$ {summary.totalDesp.toFixed(2)}</p>
-          </div>
-        </div>
-
-        <div className="space-y-16">
-          <section>
-            <h3 className="text-xl font-black text-slate-900 italic uppercase tracking-tighter mb-8 flex items-center gap-4">
-              <div className="w-2 h-10 bg-blue-600 rounded-full" />
-              Entradas no Intervalo
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50/50">
-                    <th className="px-8 py-5 text-left font-black text-slate-400 uppercase text-[9px] tracking-[0.2em]">Data</th>
-                    <th className="px-8 py-5 text-left font-black text-slate-400 uppercase text-[9px] tracking-[0.2em]">Descrição / Porte</th>
-                    <th className="px-8 py-5 text-right font-black text-slate-400 uppercase text-[9px] tracking-[0.2em]">Valor</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredData.fat.map(f => (
-                    <tr key={f.id}>
-                      <td className="px-8 py-5">
-                        <span className="font-black text-slate-900">{new Date(f.data).toLocaleDateString('pt-BR')}</span>
-                      </td>
-                      <td className="px-8 py-5 font-bold text-slate-900 uppercase italic tracking-tighter">
-                         {f.tipoLavagem} <span className="text-blue-500 ml-1">({f.porte})</span>
-                      </td>
-                      <td className="px-8 py-5 text-right font-black text-slate-900 text-lg tracking-tighter">R$ {f.valor.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  {filteredData.fat.length === 0 && (
-                    <tr><td colSpan={3} className="p-12 text-center text-slate-300 font-black italic uppercase">Nenhum dado encontrado</td></tr>
-                  )}
-                </tbody>
-              </table>
             </div>
-          </section>
-
-          <section>
-            <h3 className="text-xl font-black text-slate-900 italic uppercase tracking-tighter mb-8 flex items-center gap-4">
-              <div className="w-2 h-10 bg-red-600 rounded-full" />
-              Saídas no Intervalo
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50/50">
-                    <th className="px-8 py-5 text-left font-black text-slate-400 uppercase text-[9px] tracking-[0.2em]">Data</th>
-                    <th className="px-8 py-5 text-left font-black text-slate-400 uppercase text-[9px] tracking-[0.2em]">Detalhamento</th>
-                    <th className="px-8 py-5 text-right font-black text-slate-400 uppercase text-[9px] tracking-[0.2em]">Valor</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredData.desp.map(d => (
-                    <tr key={d.id}>
-                      <td className="px-8 py-5 font-black text-slate-900">{new Date(d.data).toLocaleDateString('pt-BR')}</td>
-                      <td className="px-8 py-5 font-semibold text-slate-500 italic">{d.observacao}</td>
-                      <td className="px-8 py-5 text-right font-black text-red-600 text-lg tracking-tighter">R$ {d.valor.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  {filteredData.desp.length === 0 && (
-                    <tr><td colSpan={3} className="p-12 text-center text-slate-300 font-black italic uppercase">Nenhum dado encontrado</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          </div>
         </div>
 
-        <div className="mt-20 bg-slate-900 p-12 rounded-[3.5rem] text-white flex flex-col md:flex-row justify-between items-center gap-8 border-4 border-slate-800 shadow-2xl">
-          <div className="text-center md:text-left">
-            <p className="text-blue-500 text-[10px] font-black uppercase tracking-[0.5em] mb-4">Resultado de Período</p>
-            <p className="text-7xl font-black tracking-tighter italic leading-none mb-4">
-              R$ {summary.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
+        {/* Grade de KPIs */}
+        <div className="p-8 md:p-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+              <div className="flex items-center gap-2 mb-3 text-slate-400">
+                <ClipboardList size={14} />
+                <span className="text-[9px] font-black uppercase tracking-widest">Atendimentos</span>
+              </div>
+              <div className="text-3xl font-black text-slate-900 tracking-tighter">{summary.countFat}</div>
+            </div>
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+              <div className="flex items-center gap-2 mb-3 text-slate-400">
+                <Activity size={14} />
+                <span className="text-[9px] font-black uppercase tracking-widest">Ticket Médio</span>
+              </div>
+              <div className="text-2xl font-black text-slate-900 tracking-tighter">R$ {summary.avgTicket.toFixed(2)}</div>
+            </div>
+            <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
+              <div className="flex items-center gap-2 mb-3 text-emerald-600">
+                <TrendingUp size={14} />
+                <span className="text-[9px] font-black uppercase tracking-widest">Total Faturado</span>
+              </div>
+              <div className="text-2xl font-black text-emerald-700 tracking-tighter">R$ {summary.totalFat.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            </div>
+            <div className="bg-red-50 p-6 rounded-3xl border border-red-100">
+              <div className="flex items-center gap-2 mb-3 text-red-600">
+                <TrendingDown size={14} />
+                <span className="text-[9px] font-black uppercase tracking-widest">Total Gastos</span>
+              </div>
+              <div className="text-2xl font-black text-red-700 tracking-tighter">R$ {summary.totalDesp.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+            </div>
           </div>
-          <div className="text-center md:text-right">
-            <p className="text-lg font-black italic tracking-tighter text-blue-500 uppercase leading-none">João Layón</p>
-            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-2">Software Architect</p>
+
+          {/* Resultado Destaque */}
+          <div className="mb-12 bg-slate-900 p-8 rounded-[2rem] text-center relative overflow-hidden shadow-2xl">
+             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-emerald-500 to-blue-500" />
+             <span className="text-blue-400 font-black text-[10px] uppercase tracking-[0.5em] mb-3 block">Resultado Líquido do Período</span>
+             <div className={`text-5xl md:text-6xl font-black tracking-tighter italic ${summary.lucro >= 0 ? 'text-white' : 'text-red-400'}`}>
+                R$ {summary.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+             </div>
+             <div className="mt-4 flex items-center justify-center gap-2 text-white/40 font-bold text-[10px] uppercase tracking-widest">
+                <Activity size={12} /> Desempenho Operacional Validado
+             </div>
+          </div>
+
+          {/* Tabelas de Detalhamento */}
+          <div className="space-y-12">
+            <section>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                <h3 className="text-sm font-black text-slate-900 uppercase italic tracking-tighter">Detalhamento de Entradas</h3>
+              </div>
+              <div className="overflow-hidden border border-slate-100 rounded-2xl">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase">Data</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase">Serviço / Porte</th>
+                      <th className="px-6 py-4 text-right text-[9px] font-black text-slate-400 uppercase">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredData.fat.map(f => (
+                      <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="text-[11px] font-black text-slate-900">{new Date(f.data).toLocaleDateString('pt-BR')}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-[11px] font-bold text-slate-800 uppercase italic">{f.tipoLavagem}</div>
+                          <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{f.porte}</div>
+                        </td>
+                        <td className="px-6 py-4 text-right font-black text-slate-900 text-sm tracking-tighter">
+                          R$ {f.valor.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-1.5 h-6 bg-red-600 rounded-full" />
+                <h3 className="text-sm font-black text-slate-900 uppercase italic tracking-tighter">Detalhamento de Saídas</h3>
+              </div>
+              <div className="overflow-hidden border border-slate-100 rounded-2xl">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase">Data</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase">Descrição</th>
+                      <th className="px-6 py-4 text-right text-[9px] font-black text-slate-400 uppercase">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredData.desp.map(d => (
+                      <tr key={d.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4 text-[11px] font-black text-slate-900">{new Date(d.data).toLocaleDateString('pt-BR')}</td>
+                        <td className="px-6 py-4 text-[11px] font-bold text-slate-600 italic uppercase truncate max-w-[150px]">{d.observacao || 'Gasto Operacional'}</td>
+                        <td className="px-6 py-4 text-right font-black text-red-600 text-sm tracking-tighter">R$ {d.valor.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          {/* Rodapé do Documento */}
+          <div className="mt-16 pt-10 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 opacity-60 italic">
+            <div className="text-center md:text-left">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Responsável Técnico</p>
+              <p className="text-xs font-black text-slate-800 uppercase">Administração Jato Pro</p>
+            </div>
+            <div className="text-center md:text-right">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Data de Emissão</p>
+              <p className="text-xs font-black text-slate-800 uppercase">{new Date().toLocaleString('pt-BR')}</p>
+            </div>
           </div>
         </div>
       </div>
