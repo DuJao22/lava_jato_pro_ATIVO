@@ -33,34 +33,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
 
   useEffect(() => {
     setIsAnimating(true);
-    const timer = setTimeout(() => setIsAnimating(false), 600);
+    const timer = setTimeout(() => setIsAnimating(false), 400);
     return () => clearTimeout(timer);
-  }, [faturamentos, despesas]);
+  }, [faturamentos, despesas, period]);
 
-  // Helper para obter data local no formato YYYY-MM-DD
-  const getLocalYYYYMMDD = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  // Obtém data local YYYY-MM-DD sem interferência de fuso horário
+  const getTodayStr = () => {
+    const now = new Date();
+    return now.toLocaleDateString('sv-SE').split(' ')[0]; // Formato YYYY-MM-DD
   };
 
   const filteredData = useMemo(() => {
-    const todayStr = getLocalYYYYMMDD(new Date());
-    
+    const today = getTodayStr();
     let startLimit = '';
-    let endLimit = todayStr;
+    let endLimit = '9999-12-31'; // Fim dos tempos para não cortar nada hoje
 
     if (period === 'today') {
-      startLimit = todayStr;
-      endLimit = todayStr;
+      startLimit = today;
+      endLimit = today;
     } else if (period === '7days') {
       const d = new Date();
       d.setDate(d.getDate() - 7);
-      startLimit = getLocalYYYYMMDD(d);
+      startLimit = d.toLocaleDateString('sv-SE').split(' ')[0];
+      endLimit = today;
     } else if (period === 'month') {
       const d = new Date();
       startLimit = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+      endLimit = '9999-12-31';
     } else if (period === 'custom' && customStart && customEnd) {
       startLimit = customStart;
       endLimit = customEnd;
@@ -93,24 +92,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
 
   const chartData = useMemo(() => {
     const dailyMap: Record<string, { date: string; faturamento: number; despesas: number; rawDate: string }> = {};
+    const today = getTodayStr();
     
-    // Define o range de datas para o gráfico
-    const dates: string[] = [];
     let startStr = filteredData.startLimit;
-    if (!startStr || period === 'all') {
+    if (!startStr || period === 'all' || period === 'month') {
       const d = new Date();
-      d.setDate(d.getDate() - 30);
-      startStr = getLocalYYYYMMDD(d);
+      if (period === 'month') {
+        d.setDate(1);
+      } else {
+        d.setDate(d.getDate() - 15); // Mostrar 15 dias se for "Tudo"
+      }
+      startStr = d.toLocaleDateString('sv-SE').split(' ')[0];
     }
 
     const current = new Date(startStr + 'T12:00:00');
-    const end = new Date(filteredData.endLimit + 'T12:00:00');
+    const end = new Date(); // Até hoje no gráfico
     
-    // Limite de segurança para evitar loops infinitos
-    let count = 0;
-    while (current <= end && count < 100) {
-      const dStr = getLocalYYYYMMDD(current);
-      dates.push(dStr);
+    while (current <= end) {
+      const dStr = current.toLocaleDateString('sv-SE').split(' ')[0];
       dailyMap[dStr] = { 
         date: current.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), 
         faturamento: 0, 
@@ -118,7 +117,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
         rawDate: dStr
       };
       current.setDate(current.getDate() + 1);
-      count++;
     }
 
     filteredData.fat.forEach(f => {
@@ -135,12 +133,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
   }, [filteredData, period]);
 
   return (
-    <div className={`space-y-6 transition-all duration-300 ${isAnimating ? 'opacity-40 scale-[0.99]' : 'opacity-100 scale-100'}`}>
+    <div className={`space-y-6 transition-all duration-300 ${isAnimating ? 'opacity-50' : 'opacity-100'}`}>
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div>
             <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Performance</h2>
-            <p className="text-white/60 text-sm font-medium">Fluxo financeiro monitorado.</p>
+            <p className="text-white/60 text-sm font-medium">Fluxo financeiro em tempo real.</p>
           </div>
           {isAnimating && <RefreshCcw className="w-5 h-5 text-blue-500 animate-spin" />}
         </div>
@@ -164,7 +162,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
             </div>
           )}
 
-          <div className="flex items-center gap-1 glass p-1.5 rounded-2xl shadow-xl overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1 glass p-1.5 rounded-2xl shadow-xl">
             {[
               { id: 'today', label: 'Hoje' },
               { id: '7days', label: '7 Dias' },
@@ -175,7 +173,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
               <button 
                 key={p.id}
                 onClick={() => setPeriod(p.id as Period)}
-                className={`whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${period === p.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40' : 'text-slate-600 hover:bg-white/50'}`}
+                className={`whitespace-nowrap px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${period === p.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-600 hover:bg-white/50'}`}
               >
                 {p.label}
               </button>
@@ -185,11 +183,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass p-8 rounded-[2rem] border-white/40 shadow-2xl group">
+        <div className="glass p-8 rounded-[2.5rem] border-white/40 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16" />
           <div className="flex items-center justify-between mb-6">
-            <span className="text-slate-500 font-black text-xs uppercase tracking-widest">Entradas</span>
-            <div className="p-3 bg-blue-600/10 rounded-2xl text-blue-600">
-              <TrendingUp className="w-6 h-6" />
+            <span className="text-slate-500 font-black text-[10px] uppercase tracking-[0.2em]">Entradas</span>
+            <div className="p-3 bg-blue-100 rounded-2xl text-blue-600">
+              <TrendingUp className="w-5 h-5" />
             </div>
           </div>
           <div className="text-4xl font-black text-slate-900 tracking-tighter">
@@ -197,11 +196,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
           </div>
         </div>
 
-        <div className="glass p-8 rounded-[2rem] border-white/40 shadow-2xl group">
+        <div className="glass p-8 rounded-[2.5rem] border-white/40 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16" />
           <div className="flex items-center justify-between mb-6">
-            <span className="text-slate-500 font-black text-xs uppercase tracking-widest">Saídas</span>
-            <div className="p-3 bg-red-600/10 rounded-2xl text-red-600">
-              <TrendingDown className="w-6 h-6" />
+            <span className="text-slate-500 font-black text-[10px] uppercase tracking-[0.2em]">Saídas</span>
+            <div className="p-3 bg-red-100 rounded-2xl text-red-600">
+              <TrendingDown className="w-5 h-5" />
             </div>
           </div>
           <div className="text-4xl font-black text-slate-900 tracking-tighter">
@@ -209,42 +209,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
           </div>
         </div>
 
-        <div className="glass p-8 rounded-[2rem] border-blue-500/30 shadow-2xl group bg-blue-600/5">
+        <div className="glass-dark p-8 rounded-[2.5rem] border-blue-500/20 shadow-2xl relative overflow-hidden bg-slate-900">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full -mr-16 -mt-16 blur-2xl" />
           <div className="flex items-center justify-between mb-6">
-            <span className="text-blue-900 font-black text-xs uppercase tracking-widest">Lucro</span>
-            <div className="p-3 bg-blue-600 rounded-2xl text-white">
-              <DollarSign className="w-6 h-6" />
+            <span className="text-blue-400 font-black text-[10px] uppercase tracking-[0.2em]">Lucro Líquido</span>
+            <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-500/40">
+              <DollarSign className="w-5 h-5" />
             </div>
           </div>
-          <div className={`text-4xl font-black tracking-tighter ${stats.lucro >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+          <div className={`text-4xl font-black tracking-tighter ${stats.lucro >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
             R$ {stats.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </div>
         </div>
       </div>
 
-      <div className="glass p-8 rounded-[2.5rem] border-white/40 shadow-2xl">
+      <div className="glass p-8 rounded-[3rem] border-white/40 shadow-2xl">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-xl font-black text-slate-900 italic uppercase tracking-tighter flex items-center gap-3">
             <div className="w-2 h-8 bg-blue-600 rounded-full" />
-            Gráfico de Movimentação
+            Movimentação Diária
           </h3>
-          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-4 py-1.5 rounded-full">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-4 py-2 rounded-full flex items-center gap-2">
              <Calendar size={12} className="text-blue-600" />
-             Ativo
+             Atualizado
           </div>
         </div>
         <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" vertical={false} />
-              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 'bold' }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `R$${val}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(val) => `R$${val}`} />
               <Tooltip 
-                contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', padding: '16px' }}
+                contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', padding: '15px' }}
                 formatter={(value: any) => [`R$ ${Number(value).toFixed(2)}`, '']}
               />
-              <Line type="monotone" dataKey="faturamento" stroke="#2563eb" strokeWidth={5} dot={{ r: 6, fill: '#2563eb', strokeWidth: 3, stroke: '#fff' }} name="Faturamento" />
-              <Line type="monotone" dataKey="despesas" stroke="#f43f5e" strokeWidth={5} dot={{ r: 6, fill: '#f43f5e', strokeWidth: 3, stroke: '#fff' }} name="Despesas" />
+              <Line type="monotone" dataKey="faturamento" stroke="#2563eb" strokeWidth={4} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} name="Faturamento" animationDuration={1500} />
+              <Line type="monotone" dataKey="despesas" stroke="#ef4444" strokeWidth={4} dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }} name="Despesas" animationDuration={1500} />
             </LineChart>
           </ResponsiveContainer>
         </div>
