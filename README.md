@@ -1,57 +1,33 @@
 
-# 🚀 Manual de Deploy: Lava-jato Pro (Render.com)
+# 🚀 Manual de Deploy: Lava-jato Pro
 
-Este guia explica como colocar seu sistema online gratuitamente no **Render**.
+Para colocar seu sistema online, siga estas instruções exatas para o **Render**.
 
-## 1. Preparação dos Dados (Supabase)
-Antes de subir o código, seu banco de dados precisa estar pronto.
-1. Crie uma conta em [supabase.com](https://supabase.com).
-2. No **SQL Editor**, execute:
+## 1. Onde você está errando no Render?
+Existem dois tipos de serviços. Escolha o **Static Site** para evitar cobranças e configurações desnecessárias.
 
-```sql
--- Tabela de Faturamento
-CREATE TABLE faturamento (
-  id TEXT PRIMARY KEY,
-  tipoLavagem TEXT NOT NULL,
-  porte TEXT NOT NULL,
-  valor NUMERIC NOT NULL,
-  pagamento TEXT NOT NULL,
-  data TIMESTAMPTZ NOT NULL
-);
+### ✅ Opção A: Static Site (RECOMENDADO)
+1. No Render, clique em **New +** e escolha **Static Site**.
+2. **Build Command:** `npm install && npm run build`
+3. **Publish Directory:** `dist`
+4. **Start Command:** (Este campo não existirá ou não será obrigatório aqui).
 
--- Tabela de Despesas
-CREATE TABLE despesas (
-  id TEXT PRIMARY KEY,
-  valor NUMERIC NOT NULL,
-  observacao TEXT,
-  data TIMESTAMPTZ NOT NULL
-);
+### ⚠️ Opção B: Web Service (O que você selecionou na imagem)
+Se você vir o campo "Start Command" como obrigatório, preencha assim:
+1. **Build Command:** `npm install && npm run build`
+2. **Start Command:** `npm run start`
+3. **Environment Variables:** Você DEVE adicionar a variável `PORT` com o valor `4173`.
 
--- Políticas de Acesso (RLS)
-ALTER TABLE faturamento ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow All" ON faturamento FOR ALL USING (true);
-ALTER TABLE despesas ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow All" ON despesas FOR ALL USING (true);
-```
+## 2. Configurando o Banco de Dados
+Não esqueça de adicionar sua variável de ambiente em qualquer uma das opções acima:
+- **Key:** `VITE_SQLITE_CLOUD_CONNECTION_STRING`
+- **Value:** `sqlitecloud://cbw4nq6vvk.g5.sqlite.cloud:8860/auth.sqlitecloud?apikey=CCfQtOyo5qbyni96cUwEdIG4q2MRcEXpRHGoNpELtNc`
 
-## 2. Deploy no Render
-1. Crie uma conta em [render.com](https://render.com).
-2. Clique em **New +** e selecione **Static Site**.
-3. Conecte seu repositório do GitHub.
-4. Configure os campos de Build:
-   - **Name**: `lava-jato-pro`
-   - **Build Command**: `npm install && npm run build`
-   - **Publish Directory**: `dist` (Isso é muito importante!)
-
-## 3. Variáveis de Ambiente
-No painel do Render, vá na aba **Environment** e adicione:
-1. `NEXT_PUBLIC_SUPABASE_URL` = (Sua URL do Supabase)
-2. `NEXT_PUBLIC_SUPABASE_ANON_KEY` = (Sua Anon Key do Supabase)
-
-## 4. Por que usar o Render?
-- **Auto-deploy**: Sempre que você salvar o código no GitHub, o Render atualiza o site sozinho.
-- **SSL Grátis**: Seu site terá `https://` automaticamente.
-- **Performance**: CDN global para carregamento rápido em qualquer lugar.
+## 3. Preparando o Banco de Dados (SQLite Cloud)
+Antes de acessar o site, você deve garantir que as tabelas existam:
+1. Acesse o painel do [SQLite Cloud](https://sqlitecloud.io).
+2. Vá em **SQL Editor**.
+3. Copie o código do arquivo `database.sql` deste projeto e execute.
 
 ---
-*Sistema desenvolvido por João Layón*
+*Desenvolvido por João Layón*
