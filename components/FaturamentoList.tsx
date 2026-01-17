@@ -134,7 +134,7 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
         </div>
         
         <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
-           <div className="flex items-center gap-1.5 bg-white/50 p-1.5 rounded-xl border border-white">
+           <div className="flex items-center gap-1.5 bg-white/50 p-1.5 rounded-xl border border-white shrink-0">
               <input 
                 type="date" 
                 className="bg-transparent border-none p-1 text-[10px] font-black uppercase text-slate-800 focus:ring-0"
@@ -150,7 +150,7 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
               />
            </div>
            {(startDate || endDate) && (
-              <button onClick={() => { setStartDate(''); setEndDate(''); }} className="p-2 bg-red-100 text-red-500 rounded-lg">
+              <button onClick={() => { setStartDate(''); setEndDate(''); }} className="p-2 bg-red-100 text-red-500 rounded-lg shrink-0">
                 <X size={14} />
               </button>
            )}
@@ -204,13 +204,13 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
         )}
       </div>
 
-      {/* Modal - Totalmente Responsivo e Rolável */}
+      {/* Modal - Totalmente Responsivo e Otimizado Mobile */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
+          <div className="bg-white w-full max-w-lg rounded-t-[2rem] md:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[92vh] md:max-h-[90vh] overflow-hidden">
             {/* Header Modal */}
-            <div className="px-6 py-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="font-black text-slate-900 italic uppercase tracking-tighter text-lg">
+            <div className="px-5 py-4 md:px-6 md:py-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="font-black text-slate-900 italic uppercase tracking-tighter text-base md:text-lg">
                 {editingId ? 'Editar Lavagem' : 'Nova Lavagem'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-500">
@@ -219,23 +219,23 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
             </div>
 
             {/* Content Modal (Scrollable) */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-4 md:space-y-5">
               <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Serviço Realizado</label>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Serviço Realizado</label>
                 <input
                   type="text"
-                  className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-black text-slate-800 italic uppercase"
+                  className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black text-slate-800 italic uppercase text-sm"
                   placeholder="Ex: Lavagem Geral"
                   value={tipoLavagem}
                   onChange={e => setTipoLavagem(e.target.value)}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Porte</label>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Porte</label>
                   <select
-                    className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-black uppercase text-xs"
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black uppercase text-[10px] md:text-xs"
                     value={porte}
                     onChange={e => setPorte(e.target.value as CarSize)}
                   >
@@ -245,10 +245,10 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Valor (R$)</label>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Valor (R$)</label>
                   <input
                     type="number"
-                    className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-black text-xl tracking-tighter"
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black text-lg tracking-tighter"
                     placeholder="0,00"
                     value={valor}
                     onChange={e => setValor(e.target.value)}
@@ -257,31 +257,31 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
               </div>
 
               <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Pagamento</label>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Pagamento</label>
                 <div className="grid grid-cols-3 gap-2">
                   {Object.values(PaymentMethod).map((method) => (
                     <button
                       key={method}
                       type="button"
                       onClick={() => setPagamento(method)}
-                      className={`flex flex-col items-center justify-center py-4 border-2 rounded-2xl transition-all ${
+                      className={`flex flex-col items-center justify-center py-3 border-2 rounded-xl transition-all ${
                         pagamento === method 
-                          ? 'border-blue-600 bg-blue-600 text-white shadow-lg' 
+                          ? 'border-blue-600 bg-blue-600 text-white shadow-md' 
                           : 'border-slate-50 bg-slate-50 text-slate-400'
                       }`}
                     >
                       {getPaymentIcon(method)}
-                      <span className="text-[8px] font-black uppercase tracking-widest mt-2">{method}</span>
+                      <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest mt-1.5">{method}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Data e Hora</label>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Data e Hora</label>
                 <input
                   type="datetime-local"
-                  className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-black text-[10px] uppercase"
+                  className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black text-[10px] uppercase"
                   value={data}
                   onChange={e => setData(e.target.value)}
                 />
@@ -290,7 +290,7 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
               {editingId && (
                 <button 
                   onClick={() => handleDelete(editingId)}
-                  className="w-full py-3 text-red-500 font-black uppercase text-[10px] flex items-center justify-center gap-2 mt-4"
+                  className="w-full py-2 text-red-500 font-black uppercase text-[9px] flex items-center justify-center gap-2 mt-2"
                 >
                   <Trash2 size={12} /> Excluir Registro
                 </button>
@@ -298,16 +298,16 @@ export const FaturamentoList: React.FC<FaturamentoListProps> = ({ items, onUpdat
             </div>
 
             {/* Footer Modal (Fixed) */}
-            <div className="p-6 bg-slate-50 border-t flex gap-3 sticky bottom-0">
+            <div className="p-5 md:p-6 bg-slate-50 border-t flex gap-3 sticky bottom-0">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-4 border-2 border-slate-200 rounded-2xl font-black uppercase text-[10px] text-slate-500"
+                className="flex-1 py-3.5 border-2 border-slate-200 rounded-xl font-black uppercase text-[10px] text-slate-500"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSave}
-                className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-600/30 active:scale-95"
+                className="flex-[2] py-3.5 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-600/30 active:scale-95"
               >
                 Salvar Lavagem
               </button>

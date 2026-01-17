@@ -101,7 +101,7 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
           </div>
           
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto">
-             <div className="flex flex-1 items-center gap-1.5 bg-white/50 p-2 rounded-xl border border-white">
+             <div className="flex flex-1 items-center gap-1.5 bg-white/50 p-2 rounded-xl border border-white shrink-0">
                 <Calendar size={12} className="text-red-500" />
                 <input 
                   type="date" 
@@ -118,7 +118,7 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
                 />
              </div>
              {(startDate || endDate) && (
-                <button onClick={() => { setStartDate(''); setEndDate(''); }} className="p-2.5 bg-red-100 text-red-500 rounded-xl">
+                <button onClick={() => { setStartDate(''); setEndDate(''); }} className="p-2.5 bg-red-100 text-red-500 rounded-xl shrink-0">
                   <X size={16} />
                 </button>
              )}
@@ -179,13 +179,13 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
         )}
       </div>
 
-      {/* Modal - Responsivo iPhone com Scroll Interno */}
+      {/* Modal - Otimizado para iPhone/Android */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[70] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[70] flex items-end md:items-center justify-center p-0 md:p-4">
+          <div className="bg-white w-full max-w-lg rounded-t-[2rem] md:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[92vh] md:max-h-[90vh] overflow-hidden">
             {/* Header Fixo */}
-            <div className="px-8 py-6 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="font-black text-slate-900 italic uppercase tracking-tighter text-xl">
+            <div className="px-5 py-4 md:px-8 md:py-6 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="font-black text-slate-900 italic uppercase tracking-tighter text-lg md:text-xl">
                 {editingId ? 'Editar Gasto' : 'Novo Lançamento'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-500">
@@ -194,17 +194,17 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
             </div>
 
             {/* Conteúdo Rolável */}
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
+            <div className="flex-1 overflow-y-auto p-5 md:p-8 space-y-4 md:space-y-6">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Valor Total (R$)</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Valor Total (R$)</label>
                 <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">
                     <DollarSign size={20} />
                   </div>
                   <input
                     type="number"
                     step="0.01"
-                    className="w-full pl-14 pr-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-red-500 font-black text-2xl tracking-tighter"
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-red-500 font-black text-2xl tracking-tighter"
                     placeholder="0,00"
                     value={valor}
                     onChange={e => setValor(e.target.value)}
@@ -213,9 +213,9 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Observação / Detalhes</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Observação / Detalhes</label>
                 <textarea
-                  className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold text-sm min-h-[120px] italic"
+                  className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold text-sm min-h-[100px] md:min-h-[120px] italic"
                   placeholder="Ex: Compra de detergente, Aluguel, Luz..."
                   value={observacao}
                   onChange={e => setObservacao(e.target.value)}
@@ -223,10 +223,10 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Data do Gasto</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Data do Gasto</label>
                 <input
                   type="date"
-                  className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-black text-xs uppercase"
+                  className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black text-xs uppercase"
                   value={data}
                   onChange={e => setData(e.target.value)}
                 />
@@ -235,7 +235,7 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
               {editingId && (
                 <button 
                   onClick={() => handleDelete(editingId)}
-                  className="w-full py-3 text-red-500 font-black uppercase text-[10px] flex items-center justify-center gap-2 mt-4"
+                  className="w-full py-2 text-red-500 font-black uppercase text-[9px] flex items-center justify-center gap-2 mt-2"
                 >
                   <Trash2 size={12} /> Excluir permanentemente
                 </button>
@@ -243,16 +243,16 @@ export const DespesasList: React.FC<DespesasListProps> = ({ items, onUpdate }) =
             </div>
 
             {/* Footer Fixo */}
-            <div className="p-8 bg-slate-50 border-t flex gap-4 sticky bottom-0">
+            <div className="p-5 md:p-8 bg-slate-50 border-t flex gap-3 md:gap-4 sticky bottom-0">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-4 border-2 border-slate-200 rounded-2xl font-black uppercase text-[10px] text-slate-500"
+                className="flex-1 py-3.5 border-2 border-slate-200 rounded-xl font-black uppercase text-[10px] text-slate-500"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSave}
-                className="flex-[2] py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-red-600/30 active:scale-95"
+                className="flex-[2] py-3.5 bg-red-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-red-600/30 active:scale-95"
               >
                 Salvar Gasto
               </button>
