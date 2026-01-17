@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -8,7 +8,8 @@ import {
   Wallet,
   Calendar,
   Filter,
-  X
+  X,
+  RefreshCcw
 } from 'lucide-react';
 import { 
   XAxis, 
@@ -32,6 +33,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
   const [period, setPeriod] = useState<Period>('month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Efeito para piscar o dashboard quando os dados mudarem
+  useEffect(() => {
+    setIsAnimating(true);
+    const timer = setTimeout(() => setIsAnimating(false), 1000);
+    return () => clearTimeout(timer);
+  }, [faturamentos, despesas]);
 
   const filteredData = useMemo(() => {
     const now = new Date();
@@ -80,13 +89,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
   const chartData = useMemo(() => {
     const dailyMap: Record<string, { date: string; faturamento: number; despesas: number }> = {};
     
-    // Gerar pontos no gráfico baseados no intervalo selecionado
     const start = new Date(filteredData.start);
     const end = new Date(filteredData.end);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    // Limitar o gráfico a no máximo 60 dias para não quebrar o layout
     const daysToIterate = Math.min(diffDays, 60);
 
     for (let i = 0; i <= daysToIterate; i++) {
@@ -114,11 +121,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
   }, [filteredData]);
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 transition-all duration-700 ${isAnimating ? 'opacity-80 scale-[0.99]' : 'opacity-100 scale-100'}`}>
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Performance</h2>
-          <p className="text-white/60 text-sm font-medium">Análise financeira por período.</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Performance</h2>
+            <p className="text-white/60 text-sm font-medium">Análise financeira em tempo real.</p>
+          </div>
+          {isAnimating && <RefreshCcw className="w-5 h-5 text-blue-500 animate-spin" />}
         </div>
         
         <div className="flex flex-col md:flex-row items-center gap-3">
@@ -161,6 +171,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Cards de estatísticas mantidos com a lógica de props reativas */}
         <div className="glass p-8 rounded-[2rem] border-white/40 shadow-2xl relative overflow-hidden group">
           <div className="flex items-center justify-between mb-6 relative z-10">
             <span className="text-slate-500 font-black text-xs uppercase tracking-widest">Entradas</span>
@@ -170,9 +181,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
           </div>
           <div className="text-4xl font-black text-slate-900 tracking-tighter relative z-10">
             R$ {stats.totalFaturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </div>
-          <div className="absolute -right-4 -bottom-4 opacity-5 text-slate-900 group-hover:scale-125 transition-transform duration-700">
-            <TrendingUp size={120} />
           </div>
         </div>
 
@@ -186,9 +194,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
           <div className="text-4xl font-black text-slate-900 tracking-tighter relative z-10">
             R$ {stats.totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </div>
-          <div className="absolute -right-4 -bottom-4 opacity-5 text-slate-900 group-hover:scale-125 transition-transform duration-700">
-            <Wallet size={120} />
-          </div>
         </div>
 
         <div className="glass p-8 rounded-[2rem] border-blue-500/30 shadow-2xl relative overflow-hidden group bg-blue-600/5">
@@ -201,9 +206,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
           <div className={`text-4xl font-black tracking-tighter relative z-10 ${stats.lucro >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
             R$ {stats.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </div>
-          <div className="absolute -right-4 -bottom-4 opacity-5 text-blue-600 group-hover:scale-125 transition-transform duration-700">
-            <Gauge size={120} />
-          </div>
         </div>
       </div>
 
@@ -211,11 +213,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ faturamentos, despesas }) 
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-xl font-black text-slate-900 italic uppercase tracking-tighter flex items-center gap-3">
             <div className="w-2 h-8 bg-blue-600 rounded-full" />
-            Movimentação de Caixa
+            Fluxo de Caixa Dinâmico
           </h3>
           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-4 py-1.5 rounded-full">
              <Calendar size={12} className="text-blue-600" />
-             Visualização Temporal
+             Atualizado Agora
           </div>
         </div>
         <div className="h-[350px] w-full">
