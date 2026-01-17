@@ -1,11 +1,12 @@
 
-# Lava-jato Pro: Configuração de Acesso Global
+# 🚀 Manual de Deploy: Lava-jato Pro (Render.com)
 
-Para que diferentes dispositivos acessem os mesmos dados, siga este guia rápido:
+Este guia explica como colocar seu sistema online gratuitamente no **Render**.
 
-## 1. Criar Banco de Dados (Supabase)
-1. Acesse [supabase.com](https://supabase.com) e crie um projeto gratuito.
-2. Vá em **SQL Editor** e cole o script abaixo para criar as tabelas:
+## 1. Preparação dos Dados (Supabase)
+Antes de subir o código, seu banco de dados precisa estar pronto.
+1. Crie uma conta em [supabase.com](https://supabase.com).
+2. No **SQL Editor**, execute:
 
 ```sql
 -- Tabela de Faturamento
@@ -26,17 +27,31 @@ CREATE TABLE despesas (
   data TIMESTAMPTZ NOT NULL
 );
 
--- Habilitar acesso público (apenas para este exemplo simplificado)
+-- Políticas de Acesso (RLS)
 ALTER TABLE faturamento ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow All" ON faturamento FOR ALL USING (true);
 ALTER TABLE despesas ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow All" ON despesas FOR ALL USING (true);
 ```
 
-## 2. Configurar na Vercel
-Nas configurações do seu projeto na Vercel, adicione as **Environment Variables**:
-- `NEXT_PUBLIC_SUPABASE_URL`: Sua URL do projeto.
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Sua chave Anon pública.
+## 2. Deploy no Render
+1. Crie uma conta em [render.com](https://render.com).
+2. Clique em **New +** e selecione **Static Site**.
+3. Conecte seu repositório do GitHub.
+4. Configure os campos de Build:
+   - **Name**: `lava-jato-pro`
+   - **Build Command**: `npm install && npm run build`
+   - **Publish Directory**: `dist` (Isso é muito importante!)
 
-## 3. Pronto!
-Ao recarregar o sistema, o ícone no canto inferior mudará para **"Nuvem Ativa"**. Agora, qualquer celular que abrir o link verá os mesmos carros e valores em tempo real.
+## 3. Variáveis de Ambiente
+No painel do Render, vá na aba **Environment** e adicione:
+1. `NEXT_PUBLIC_SUPABASE_URL` = (Sua URL do Supabase)
+2. `NEXT_PUBLIC_SUPABASE_ANON_KEY` = (Sua Anon Key do Supabase)
+
+## 4. Por que usar o Render?
+- **Auto-deploy**: Sempre que você salvar o código no GitHub, o Render atualiza o site sozinho.
+- **SSL Grátis**: Seu site terá `https://` automaticamente.
+- **Performance**: CDN global para carregamento rápido em qualquer lugar.
+
+---
+*Sistema desenvolvido por João Layón*
