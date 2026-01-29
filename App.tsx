@@ -5,13 +5,17 @@ import { Dashboard } from './components/Dashboard';
 import { FaturamentoList } from './components/FaturamentoList';
 import { DespesasList } from './components/DespesasList';
 import { Relatorios } from './components/Relatorios';
+import { LandingPage } from './components/LandingPage';
 import { Faturamento, Despesa } from './types';
 import { storage } from './services/storage';
-import { Loader2, CloudOff, Cloud, RefreshCw, HeartPulse } from 'lucide-react';
+import { Loader2, CloudOff, Cloud, RefreshCw } from 'lucide-react';
 
 type View = 'dashboard' | 'faturamento' | 'despesas' | 'relatorios';
 
 const App: React.FC = () => {
+  // Estado para controlar se o usuário está na Landing Page ou no Sistema
+  const [isInSystem, setIsInSystem] = useState(false);
+  
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [faturamentos, setFaturamentos] = useState<Faturamento[]>([]);
   const [despesas, setDespesas] = useState<Despesa[]>([]);
@@ -58,6 +62,7 @@ const App: React.FC = () => {
 
   // Efeito de Polling para dados (30 segundos)
   useEffect(() => {
+    // Carrega dados imediatamente ao montar, mas o usuário só vê se !isInSystem for false
     loadData(true);
 
     const interval = setInterval(() => {
@@ -126,6 +131,11 @@ const App: React.FC = () => {
         return <Dashboard faturamentos={faturamentos} despesas={despesas} />;
     }
   };
+
+  // Se o usuário ainda não clicou em "Entrar", mostra a Landing Page
+  if (!isInSystem) {
+    return <LandingPage onEnterSystem={() => setIsInSystem(true)} />;
+  }
 
   return (
     <Layout currentView={currentView} setView={setCurrentView}>
