@@ -10,7 +10,8 @@ import {
   BarChart3, 
   LayoutDashboard,
   Gauge,
-  Play
+  Play,
+  MessageCircle
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -18,8 +19,13 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnterSystem }) => {
+  // Configuração do WhatsApp
+  const phoneNumber = "5531995281707";
+  const message = "Olá João Layon! Vi o sistema Lava-jato Pro pela DS Digital Solutions e tenho interesse em profissionalizar meu negócio.";
+  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-blue-600 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 text-white selection:bg-blue-600 selection:text-white overflow-x-hidden pb-20 md:pb-0">
       
       {/* Navbar Minimalista */}
       <nav className="fixed top-0 w-full z-50 glass-dark border-b border-white/5 backdrop-blur-md">
@@ -58,7 +64,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterSystem }) => {
           </h1>
           
           <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
-            O único sistema desenvolvido especificamente para donos de Lava-jato que querem profissionalizar a gestão, controlar o caixa e ver o lucro real na palma da mão.
+            O único sistema desenvolvido pela <strong>DS Digital Solutions</strong> especificamente para donos de Lava-jato que querem profissionalizar a gestão, controlar o caixa e ver o lucro real na palma da mão.
           </p>
           
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 pt-4">
@@ -193,15 +199,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterSystem }) => {
         </div>
       </section>
 
+      {/* Botão Flutuante do WhatsApp */}
+      <a 
+        href={whatsappUrl} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 group"
+      >
+        <div className="bg-[#25D366] hover:bg-[#20bd5a] text-white p-4 rounded-full shadow-[0_0_30px_rgba(37,211,102,0.5)] hover:shadow-[0_0_50px_rgba(37,211,102,0.7)] transition-all duration-300 hover:scale-110 flex items-center gap-0 group-hover:gap-3 overflow-hidden">
+          <MessageCircle size={28} fill="currentColor" className="shrink-0" />
+          <span className="max-w-0 group-hover:max-w-xs overflow-hidden transition-all duration-500 ease-in-out whitespace-nowrap font-black uppercase text-[10px] tracking-widest text-white">
+            Falar com João Layon
+          </span>
+        </div>
+        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>
+      </a>
+
       {/* Footer */}
-      <footer className="py-12 text-center text-slate-600 border-t border-white/5">
+      <footer className="py-12 text-center text-slate-600 border-t border-white/5 bg-black/20">
         <div className="flex items-center justify-center gap-2 mb-4 opacity-50">
           <ShieldCheck size={16} />
           <span className="text-[10px] font-black uppercase tracking-widest">Ambiente Seguro & Criptografado</span>
         </div>
-        <p className="text-[10px] font-black uppercase tracking-widest">
-          © 2025 Lava-jato Pro Edition. Todos os direitos reservados.
-        </p>
+        <div className="space-y-2">
+          <p className="text-[10px] font-black uppercase tracking-widest">
+            © 2025 Lava-jato Pro Edition.
+          </p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-2 text-[9px] uppercase tracking-wider">
+            <span className="text-slate-500 font-bold">Desenvolvido por</span>
+            <span className="text-white font-black bg-white/5 px-2 py-0.5 rounded border border-white/10">João Layon</span>
+            <span className="hidden md:inline text-slate-700">•</span>
+            <span className="text-blue-500 font-black">DS Digital Solutions</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
